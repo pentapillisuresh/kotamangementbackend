@@ -1,6 +1,7 @@
 const express = require("express");
 const connectDB = require("./config/db");
 const ngoRoutes = require("./routes/ngoRoutes");
+const citizenRoutes = require("./routes/citizenRoutes"); // Add this line
 const cors = require("cors");
 const path = require("path");
 const app = express();
@@ -20,13 +21,14 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // NGO routes
 app.use("/api/ngo", ngoRoutes);
 
+// Citizen routes - Add this line
+app.use("/api/citizen", citizenRoutes);
+
 // Welcome route
 app.get("/api/", (req, res) => {
   console.log("GET /api/ called");
   res.send(`<!DOCTYPE html><html>...</html>`);
 });
-
- // ← fixed closing parenthesis here
 
 // Start server
 const PORT = 5000;
