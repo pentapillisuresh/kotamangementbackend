@@ -2,7 +2,7 @@ const Citizen = require("../models/Citizen");
 const path = require("path");
 const fs = require("fs");
 
-// Create new citizen (ALLOW DUPLICATE AADHAR)
+// Create new citizen
 const createCitizen = async (req, res) => {
   try {
     const {
@@ -18,7 +18,20 @@ const createCitizen = async (req, res) => {
 
     console.log("📝 Creating citizen:", name);
     console.log("📸 File info:", req.file);
-    console.log("ℹ️ Aadhar:", adharCardNumber, "(duplicates allowed)");
+
+    // Check if citizen with same Aadhar already exists
+    const existingCitizen = await Citizen.findOne({ adharCardNumber });
+    if (existingCitizen) {
+      // Delete the uploaded file if citizen already exists
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+        console.log("🗑️ Deleted duplicate file:", req.file.path);
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Citizen with this Aadhar card number already exists"
+      });
+    }
 
     // Handle photo upload - FIXED PATH HANDLING
     let photoData = null;
@@ -134,47 +147,6 @@ const getCitizenById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching citizen",
-      error: error.message
-    });
-  }
-};
-
-// Get citizens by Aadhar number (returns array for duplicates)
-const getCitizensByAadhar = async (req, res) => {
-  try {
-    const { adharCardNumber } = req.params;
-    console.log("🔍 Fetching citizens by Aadhar:", adharCardNumber);
-
-    if (!adharCardNumber || !/^\d{12}$/.test(adharCardNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid 12-digit Aadhar card number is required"
-      });
-    }
-
-    const citizens = await Citizen.find({ adharCardNumber }).sort({ createdAt: -1 });
-
-    // Add full image URLs
-    const citizensWithImageUrls = citizens.map(citizen => {
-      const citizenObj = citizen.toObject();
-      if (citizenObj.photo && citizenObj.photo.filename) {
-        citizenObj.photo.url = `http://localhost:5000/uploads/${citizenObj.photo.filename}`;
-      }
-      return citizenObj;
-    });
-
-    console.log(`✅ Found ${citizens.length} records for Aadhar: ${adharCardNumber}`);
-    res.status(200).json({
-      success: true,
-      count: citizens.length,
-      adharCardNumber,
-      data: citizensWithImageUrls
-    });
-  } catch (error) {
-    console.error("❌ Error fetching citizens by Aadhar:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching citizens by Aadhar",
       error: error.message
     });
   }
@@ -332,40 +304,6 @@ const searchCitizens = async (req, res) => {
   }
 };
 
-// Get citizen visit history by Aadhar
-const getVisitHistory = async (req, res) => {
-  try {
-    const { adharCardNumber } = req.params;
-    console.log("📊 Fetching visit history for Aadhar:", adharCardNumber);
-
-    if (!adharCardNumber || !/^\d{12}$/.test(adharCardNumber)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid 12-digit Aadhar card number is required"
-      });
-    }
-
-    const visits = await Citizen.find({ adharCardNumber })
-      .select('name purpose createdAt updatedAt')
-      .sort({ createdAt: -1 });
-
-    console.log(`✅ Found ${visits.length} visits for Aadhar: ${adharCardNumber}`);
-    res.status(200).json({
-      success: true,
-      count: visits.length,
-      adharCardNumber,
-      data: visits
-    });
-  } catch (error) {
-    console.error("❌ Error fetching visit history:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching visit history",
-      error: error.message
-    });
-  }
-};
-
 // Test endpoint to verify file serving
 const testFileServing = async (req, res) => {
   try {
@@ -441,11 +379,9 @@ module.exports = {
   createCitizen,
   getAllCitizens,
   getCitizenById,
-  getCitizensByAadhar,
   updateCitizen,
   deleteCitizen,
   searchCitizens,
-  getVisitHistory,
   testFileServing,
   checkFileExists
 };
