@@ -7,9 +7,11 @@ const {
   createCitizen,
   getAllCitizens,
   getCitizenById,
+  getCitizensByAadhar,
   updateCitizen,
   deleteCitizen,
   searchCitizens,
+  getVisitHistory,
   testFileServing,
   checkFileExists
 } = require("../controllers/citizenController");
@@ -82,10 +84,12 @@ router.get("/test", (req, res) => {
 router.get("/test-files", testFileServing);
 router.get("/check-file/:filename", checkFileExists);
 
-// Routes with multer error handling
+// Citizen routes with multer error handling
 router.post("/", upload.single("photo"), handleMulterError, createCitizen);
 router.get("/", getAllCitizens);
 router.get("/search", searchCitizens);
+router.get("/aadhar/:adharCardNumber", getCitizensByAadhar); // Get all citizens by Aadhar number
+router.get("/visits/:adharCardNumber", getVisitHistory); // Get visit history by Aadhar
 router.get("/:id", getCitizenById);
 router.put("/:id", upload.single("photo"), handleMulterError, updateCitizen);
 router.delete("/:id", deleteCitizen);
