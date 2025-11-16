@@ -30,7 +30,6 @@ const citizenSchema = new mongoose.Schema({
   adharCardNumber: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     match: [/^\d{12}$/, "Aadhar card number must be 12 digits"]
   },
